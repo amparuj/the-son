@@ -254,7 +254,8 @@
             <div class="fw-semibold">${g.name}</div>
             <div class="text-muted small">
               ${min>0 ? `ต้องเลือกอย่างน้อย ${min}` : ''}
-              ${maxReal>0 ? ` / เลือกได้สูงสุด ${maxReal}` : ''}
+              ${min>0 && maxReal>0 ? `/` : ''}
+              ${maxReal>0 ? ` เลือกได้สูงสุด ${maxReal}` : ''}
             </div>
           </div>
           <div class="mt-2" data-group-options="1"></div>
@@ -337,13 +338,17 @@
         const qty = parseInt(document.getElementById('modalQty').value || '1', 10);
         const optionIds = Array.from(document.querySelectorAll('#modalGroups .opt-checkbox:checked'))
                 .map(x => parseInt(x.value, 10));
+        const optionNames = Array.from(
+                document.querySelectorAll('#modalGroups .opt-checkbox:checked')
+        ).map(x => x.closest('label')?.innerText.trim());
 
         cart.push({
           uuid: uuidv4(),
           product_id: currentProduct.id,
           product_name: currentProduct.name,
           qty,
-          option_ids: optionIds
+          option_ids: optionIds,
+          option_names: optionNames
         });
 
         bootstrap.Modal.getInstance(document.getElementById('optModal')).hide();
@@ -377,7 +382,7 @@
           row.innerHTML = `
         <div>
           <div class="fw-semibold">#${idx+1} รายการ: ${it.product_name} x ${it.qty}</div>
-          <div class="text-muted">options: ${it.option_ids.join(', ') || '-'}</div>
+          <div class="text-muted">options: ${it.option_names.join(', ') || '-'}</div>
         </div>
         <button type="button" class="btn btn-sm btn-outline-danger">ลบ</button>
       `;
