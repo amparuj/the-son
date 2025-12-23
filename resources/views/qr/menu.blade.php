@@ -91,11 +91,11 @@
                   เพิ่ม
                 </button>
 
-                @if($enabledGroups->count() > 0)
-                  <div class="mt-2 small text-muted">มีตัวเลือก</div>
-                @else
-                  <div class="mt-2 small text-muted">ไม่มีตัวเลือก</div>
-                @endif
+{{--                @if($enabledGroups->count() > 0)--}}
+{{--                  <div class="mt-2 small text-muted">มีตัวเลือก</div>--}}
+{{--                @else--}}
+{{--                  <div class="mt-2 small text-muted">ไม่มีตัวเลือก</div>--}}
+{{--                @endif--}}
               </div>
             </div>
           </div>
@@ -138,14 +138,30 @@
           <div id="modalGroups"></div>
 
           <div class="mb-3">
-            <label class="form-label">หมายเหตุ (ถ้ามี)</label>
-            <input type="text" class="form-control" id="modalNote" placeholder="เช่น ไม่ผัก, ไม่กระเทียมเจียว">
+            <label class="form-label">จำนวน</label>
+
+            <div class="input-group">
+              <button type="button"
+                      class="btn btn-outline-secondary"
+                      onclick="changeQty(-1)">
+                −
+              </button>
+
+              <input type="number"
+                     class="form-control text-center"
+                     id="modalQty"
+                     min="1"
+                     value="1"
+                     readonly>
+
+              <button type="button"
+                      class="btn btn-outline-secondary"
+                      onclick="changeQty(1)">
+                +
+              </button>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label">จำนวน</label>
-            <input type="number" class="form-control" id="modalQty" min="1" value="1">
-          </div>
 
           <div class="alert alert-danger d-none" id="modalError"></div>
         </div>
@@ -168,6 +184,16 @@
   </style>
 
   @push('scripts')
+    <script>
+      function changeQty(delta) {
+        const input = document.getElementById('modalQty');
+        let val = parseInt(input.value || '1', 10);
+        val += delta;
+        if (val < 1) val = 1;
+        input.value = val;
+      }
+    </script>
+
     <script>
       (function(){
         const searchEl = document.getElementById('search');
@@ -199,7 +225,6 @@
         currentProduct = JSON.parse(btn.getAttribute('data-product') || '{}');
 
         document.getElementById('modalTitle').textContent = currentProduct.name || 'เลือกตัวเลือก';
-        document.getElementById('modalNote').value = '';
         document.getElementById('modalQty').value = 1;
 
         const err = document.getElementById('modalError');
@@ -211,7 +236,7 @@
 
         const groups = (currentProduct.groups || []);
         if (groups.length === 0) {
-          holder.innerHTML = '<div class="alert alert-info">เมนูนี้ไม่มีตัวเลือก</div>';
+          // holder.innerHTML = '<div class="alert alert-info">เมนูนี้ไม่มีตัวเลือก</div>';
         } else {
           groups.forEach(g => {
             const min = parseInt(g.min || 0, 10);
@@ -310,15 +335,14 @@
         }
 
         const qty = parseInt(document.getElementById('modalQty').value || '1', 10);
-        const note = (document.getElementById('modalNote').value || '').trim();
         const optionIds = Array.from(document.querySelectorAll('#modalGroups .opt-checkbox:checked'))
                 .map(x => parseInt(x.value, 10));
 
         cart.push({
           uuid: uuidv4(),
           product_id: currentProduct.id,
+          product_name: currentProduct.name,
           qty,
-          note,
           option_ids: optionIds
         });
 
@@ -352,9 +376,8 @@
           row.className = 'd-flex justify-content-between align-items-start border rounded p-2 mb-2 bg-white';
           row.innerHTML = `
         <div>
-          <div class="fw-semibold">#${idx+1} สินค้า ID: ${it.product_id} x ${it.qty}</div>
+          <div class="fw-semibold">#${idx+1} รายการ: ${it.product_name} x ${it.qty}</div>
           <div class="text-muted">options: ${it.option_ids.join(', ') || '-'}</div>
-          ${it.note ? `<div class="text-muted">note: ${it.note}</div>` : ''}
         </div>
         <button type="button" class="btn btn-sm btn-outline-danger">ลบ</button>
       `;
@@ -372,7 +395,6 @@
 
           mk(`items[${it.uuid}][product_id]`, it.product_id);
           mk(`items[${it.uuid}][qty]`, it.qty);
-          if (it.note) mk(`items[${it.uuid}][note]`, it.note);
           it.option_ids.forEach(oid => mk(`items[${it.uuid}][option_ids][]`, oid));
         });
       }
