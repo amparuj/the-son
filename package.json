@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "echo \"No Vite required (Bootstrap CDN)\"",
+    "build": "echo \"No Vite required (Bootstrap CDN)\""
+  }
+}
