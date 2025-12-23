@@ -33,7 +33,7 @@
 
           <label class="form-check mb-0 ms-auto">
             <input class="form-check-input group-enable" type="checkbox"
-                   name="groups[{{ $group->id }}][enabled]"
+                   name="groups[{{ $group->id }}][enabled]" value="1"
                    {{ $enabled ? 'checked' : '' }}>
             ใช้ Group นี้
           </label>
@@ -54,7 +54,7 @@
             @php $po = $attachedOptions->get($opt->id); @endphp
             <div class="form-check mb-2">
               <input class="form-check-input" type="checkbox"
-                     name="options[{{ $opt->id }}][enabled]"
+                     name="options[{{ $opt->id }}][enabled]" value="1"
                      {{ $po ? 'checked' : '' }}>
               <label class="form-check-label">
                 {{ $opt->name }}

@@ -79,6 +79,73 @@ class OrderService
         $this->addItemInternal($order, $product, $qty, $note, 'QR', null, $submissionId);
     }
 
+    /**
+     * QR creates 1 line item per selection set (แบบ B) + store option snapshots.
+     *
+     * @param array $snapshots [
+     *   ['option_id'=>int,'name'=>string,'price'=>float,'qty'=>int],
+     *   ...
+     * ]
+     */
+    public function addItemFromQrLine(
+        Order $order,
+        Product $product,
+        int $qty,
+        ?string $note,
+        array $snapshots,
+        ?int $submissionId = null
+    ): void {
+        if ($order->status !== 'OPEN') {
+            throw new \RuntimeException('Order is not OPEN.');
+        }
+        if ($qty <= 0) {
+            throw new \InvalidArgumentException('Qty must be >= 1');
+        }
+
+        DB::transaction(function () use ($order, $product, $qty, $note, $snapshots, $submissionId) {
+
+            $addonPerUnit = 0.0;
+            foreach ($snapshots as $s) {
+                $addonPerUnit += ((float)($s['price'] ?? 0)) * ((int)($s['qty'] ?? 1));
+            }
+
+            $unit = (float)$product->price + $addonPerUnit;
+            $lineTotal = $unit * $qty;
+
+            /** @var \App\Models\OrderItem $item */
+            $item = OrderItem::create([
+                'order_id' => $order->id,
+                'order_submission_id' => $submissionId,
+
+                'product_name' => $product->name,
+                'unit_price' => $unit,
+                'qty' => $qty,
+                'line_total' => $lineTotal,
+                'note' => $note,
+
+                'created_via' => 'QR',
+                'created_by' => null,
+
+                'status' => 'OPEN',
+                'done_at' => null,
+            ]);
+
+            // store option snapshots
+            foreach ($snapshots as $s) {
+                OrderItemOption::create([
+                    'order_item_id' => $item->id,
+                    'option_id' => (int)($s['option_id'] ?? 0),
+                    'option_name_snapshot' => (string)($s['name'] ?? ''),
+                    'option_price_snapshot' => (float)($s['price'] ?? 0),
+                    'qty' => (int)($s['qty'] ?? 1),
+                ]);
+            }
+
+            $this->recalcTotals($order);
+        });
+    }
+
+
     public function createSubmission(Order $order, string $source, ?int $userId): OrderSubmission
     {
         return OrderSubmission::create([
