@@ -17,6 +17,11 @@ class QrMenuController extends Controller
 
         $products = Product::query()
             ->where('is_active', true)
+            ->with(['options' => function($q){
+                $q->where('options.is_active', true)
+                  ->wherePivot('is_allowed', true)
+                  ->orderBy('product_option.sort');
+            }])
             ->orderBy('name')
             ->get();
 
@@ -36,6 +41,8 @@ class QrMenuController extends Controller
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.qty' => ['required', 'integer', 'min:1', 'max:20'],
             'items.*.note' => ['nullable', 'string', 'max:100'],
+            'items.*.option_ids' => ['array'],
+            'items.*.option_ids.*' => ['integer', 'exists:options,id'],
         ]);
 
         $order = $this->orders->getOrCreateOpenDineInOrder($table, null);
@@ -44,13 +51,42 @@ class QrMenuController extends Controller
         $submission = $this->orders->createSubmission($order, 'QR', null);
 
         foreach ($data['items'] as $it) {
-            $product = Product::findOrFail($it['product_id']);
+            $product = Product::with(['options' => function($q){
+                $q->where('options.is_active', true)->wherePivot('is_allowed', true);
+            }])->findOrFail($it['product_id']);
+
             $qty = (int) $it['qty'];
             $note = $it['note'] ?? null;
-            $this->orders->addItemFromQr($order, $product, $qty, $note, $submission->id);
+            $optionIds = $it['option_ids'] ?? [];
 
-            $unit = (float) $product->price;
+            // Validate: option must be allowed for this product
+            $allowed = $product->options->keyBy('id');
+            $snapshots = [];
+            $addonPerUnit = 0.0;
+
+            foreach ($optionIds as $oid) {
+                $oid = (int) $oid;
+                if (!$allowed->has($oid)) {
+                    abort(422, 'มีตัวเลือกที่ไม่ได้รับอนุญาตสำหรับเมนูนี้');
+                }
+                $opt = $allowed->get($oid);
+                $price = (float) ($opt->pivot->price_override ?? $opt->base_price);
+                $snapshots[] = [
+                    'option_id' => $opt->id,
+                    'name' => $opt->name,
+                    'price' => $price,
+                    'qty' => 1,
+                ];
+                $addonPerUnit += $price;
+            }
+
+            // Create 1 line item (แบบ B) + snapshot options
+            $this->orders->addItemFromQrLine($order, $product, $qty, $note, $snapshots, $submission->id);
+
+            $unit = (float) $product->price + $addonPerUnit;
             $lineTotal = $unit * $qty;
+
+            // For monitoring, store line with total including options (note contains customer text)
             $this->orders->addSubmissionItem($submission, $product->name, $unit, $qty, $lineTotal, $note);
         }
 

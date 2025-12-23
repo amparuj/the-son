@@ -50,6 +50,7 @@
             </td>
             <td class="text-end">
               <a class="btn btn-sm btn-outline-primary" href="{{ route('staff.products.edit', $p) }}">Edit</a>
+              <a class="btn btn-sm btn-outline-dark ms-1" href="{{ route('staff.products.options.edit', $p) }}">Options</a>
               <form class="d-inline" method="POST" action="{{ route('staff.products.destroy', $p) }}"
                     onsubmit="return confirm('ลบสินค้านี้?');">
                 @csrf
