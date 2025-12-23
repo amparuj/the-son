@@ -1,22 +1,35 @@
-# Staff CRUD: Option Groups (ครบระบบ)
+# OrderItemOption fix (Laravel)
 
-เพิ่มหน้า CRUD สำหรับ Option Group และเลือก Options เข้า Group ได้ (many-to-many ผ่าน option_group_items)
+This package adds a missing Eloquent model so calls like:
 
-## ติดตั้ง
-1) วาง Controller:
-   app/Http/Controllers/Staff/OptionGroupController.php
+    OrderItemOption::create([...])
 
-2) วาง Views:
-   resources/views/staff/option_groups/index.blade.php
-   resources/views/staff/option_groups/create.blade.php
-   resources/views/staff/option_groups/edit.blade.php
+work correctly and no longer throw:
 
-3) เพิ่ม routes:
-   นำโค้ดจาก routes/staff_option_groups_crud.routes.snippet.php ไป merge ใน routes/web.php ภายใน staff group เดิม
+    Class "App\Services\OrderItemOption" not found
 
-4) เพิ่มเมนูใน navbar staff:
-   ดู snippet: resources/views/layouts/staff.navbar.option_groups.snippet.blade.php
+## What’s included
+- `app/Models/OrderItemOption.php` — Eloquent model with a default `$fillable` set.
 
-## เงื่อนไข
-- ต้องมี tables: option_groups, option_group_items, options แล้ว (migrate แล้ว)
-- Model OptionGroup ต้องมี relation options() ตาม snippet
+## How to apply
+1) Copy `app/Models/OrderItemOption.php` into your Laravel project at:
+   `app/Models/OrderItemOption.php`
+
+2) In the file where you call `OrderItemOption::create([...])`, add (or fix) the import:
+
+   ```php
+   use App\Models\OrderItemOption;
+   ```
+
+   Alternatively, you can reference the class fully-qualified:
+   `\App\Models\OrderItemOption::create([...]);`
+
+3) Run:
+
+   ```bash
+   composer dump-autoload
+   ```
+
+## Notes
+- If your database table is not named `order_item_options`, set `protected $table`.
+- Adjust `$fillable` to match your actual columns.
