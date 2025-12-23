@@ -16,6 +16,15 @@ class Product extends Model
             ->withTimestamps()
             ->orderBy('product_option.sort');
     }
+
+    public function optionGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(OptionGroup::class, 'product_option_groups')
+            ->withPivot(['sort','min_select','max_select','is_enabled'])
+            ->withTimestamps()
+            ->orderBy('product_option_groups.sort');
+    }
+
     protected $fillable = ['name', 'price', 'is_active', 'image_path'];
 
     protected $casts = [

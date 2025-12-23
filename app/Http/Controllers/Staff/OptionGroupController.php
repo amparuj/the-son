@@ -29,6 +29,8 @@ class OptionGroupController extends Controller
             'sort' => ['nullable','integer','min:0'],
             'option_ids' => ['array'],
             'option_ids.*' => ['integer','exists:options,id'],
+            'option_order' => ['array'],
+            'option_order.*' => ['integer','exists:options,id'],
         ]);
 
         return DB::transaction(function () use ($data) {
@@ -38,6 +40,14 @@ class OptionGroupController extends Controller
             ]);
 
             $ids = $data['option_ids'] ?? [];
+            $order = $data['option_order'] ?? [];
+
+            if (!empty($order)) {
+                $order = array_values(array_filter($order, fn($id) => in_array($id, $ids)));
+                $idsNotInOrder = array_values(array_diff($ids, $order));
+                $ids = array_merge($order, $idsNotInOrder);
+            }
+
             if (!empty($ids)) {
                 $sync = [];
                 $i = 0;
@@ -67,6 +77,8 @@ class OptionGroupController extends Controller
             'sort' => ['nullable','integer','min:0'],
             'option_ids' => ['array'],
             'option_ids.*' => ['integer','exists:options,id'],
+            'option_order' => ['array'],
+            'option_order.*' => ['integer','exists:options,id'],
         ]);
 
         return DB::transaction(function () use ($option_group, $data) {
@@ -76,6 +88,14 @@ class OptionGroupController extends Controller
             ]);
 
             $ids = $data['option_ids'] ?? [];
+            $order = $data['option_order'] ?? [];
+
+            if (!empty($order)) {
+                $order = array_values(array_filter($order, fn($id) => in_array($id, $ids)));
+                $idsNotInOrder = array_values(array_diff($ids, $order));
+                $ids = array_merge($order, $idsNotInOrder);
+            }
+
             $sync = [];
             $i = 0;
             foreach ($ids as $id) {
@@ -83,13 +103,13 @@ class OptionGroupController extends Controller
             }
             $option_group->options()->sync($sync);
 
-            return redirect()->route('staff.option-groups.index')->with('success', 'บันทึกแล้ว');
+            return redirect()->route('staff.option-groups.edit', $option_group->id)->with('success', 'บันทึกแล้ว');
         });
     }
 
     public function destroy(OptionGroup $option_group)
     {
-        $option_group->delete(); // pivot จะ cascade ถ้าตั้ง FK cascadeOnDelete ใน migration option_group_items
+        $option_group->delete();
         return redirect()->route('staff.option-groups.index')->with('success', 'ลบกลุ่มแล้ว');
     }
 }
