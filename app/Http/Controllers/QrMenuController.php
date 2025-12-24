@@ -22,17 +22,20 @@ class QrMenuController extends Controller
                 'options' => function($q){
                     $q->where('options.is_active', true)
                       ->wherePivot('is_allowed', true)
-                      ->orderBy('product_option.sort');
+                      ->orderBy('product_option.sort')
+                      ->orderBy('options.id');
                 },
-                // group ที่เปิดใช้กับสินค้านี้ + ตั้ง min/max ได้
-                'optionGroups' => function($q){
+                // ✅ ใช้ global sort ของ option_groups ให้ตรงกับหน้า Option Groups
+                'optionGroupsGlobal' => function($q){
                     $q->wherePivot('is_enabled', true)
-                      ->orderBy('product_option_groups.sort');
+                      ->orderBy('option_groups.sort')
+                      ->orderBy('option_groups.id');
                 },
                 // options ภายใน group (ตามลำดับที่ staff จัดใน group)
-                'optionGroups.options' => function($q){
+                'optionGroupsGlobal.options' => function($q){
                     $q->where('options.is_active', true)
-                      ->orderBy('option_group_items.sort');
+                      ->orderBy('option_group_items.sort')
+                      ->orderBy('options.id');
                 },
             ])
             ->orderBy('name')
@@ -69,10 +72,14 @@ class QrMenuController extends Controller
                     $q->where('options.is_active', true)->wherePivot('is_allowed', true);
                 },
                 'optionGroups' => function($q){
-                    $q->wherePivot('is_enabled', true)->orderBy('product_option_groups.sort');
+                    $q->wherePivot('is_enabled', true)
+                        ->orderBy('option_groups.sort')   // ✅ เรียงตาม global sort (เหมือนหน้าหลังบ้าน)
+                        ->orderBy('option_groups.id');    // ✅ กัน sort ซ้ำ/NULL
                 },
                 'optionGroups.options' => function($q){
-                    $q->where('options.is_active', true)->orderBy('option_group_items.sort');
+                    $q->where('options.is_active', true)
+                        ->orderBy('option_group_items.sort')
+                        ->orderBy('options.id');
                 },
             ])->findOrFail($it['product_id']);
 

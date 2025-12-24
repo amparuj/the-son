@@ -28,9 +28,10 @@
               : asset('images/no-image.jpg');
 
             $enabledGroups = $product->optionGroups
-              ->filter(fn($g) => (bool)($g->pivot->is_enabled ?? false))
-              ->values();
-
+            ->filter(fn($g) => (bool)($g->pivot->is_enabled ?? false))
+            ->sortBy(fn($g) => [(int)($g->sort ?? 999999), (int)$g->id])   // ✅ ตรงหลังบ้าน
+            ->values();
+            
             $allowed = $product->options
               ->filter(fn($o) => (bool)($o->pivot->is_allowed ?? false))
               ->keyBy('id');
